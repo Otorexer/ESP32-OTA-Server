@@ -189,7 +189,6 @@ def main() -> None:
         download_files()
         update_boot_script()
         log('Done. Continuing...')
-        print("Hola")
     except Exception as e:
         log(f"Unexpected error: {e}")
         time.sleep(2)
