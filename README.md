@@ -78,16 +78,17 @@ npm start
 
 1. Flash the ESP32 device with the latest MicroPython firmware using [esptool](https://github.com/espressif/esptool).
 
-2. Copy files from `public/` to your ESP32 device root using a MicroPython file manager such as [ampy](https://github.com/scientifichackers/ampy), [rshell](https://github.com/dhylands/rshell), or [Thonny IDE](https://thonny.org/).
+2. Copy only the following files from the `public/` directory to your ESP32 device **for the initial setup**:
 
 ```bash
 # Example using ampy:
 ampy -p /dev/ttyUSB0 put public/boot.py
-ampy -p /dev/ttyUSB0 put public/main.py
-ampy -p /dev/ttyUSB0 put public/ws.py
+ampy -p /dev/ttyUSB0 put public/wifi.json
 ```
 
-3. Edit the configuration parameters in `public/boot.py` and `public/main.py` if necessary (WiFi SSID/password, server URL/IP).
+> **Note:** The files `main.py` and `ws.py` will be **automatically downloaded** by the ESP32 on the first boot.
+
+3. Edit the configuration parameters in `public/boot.py` and `public/wifi.json` if necessary (e.g., WiFi SSID/password, server URL/IP).
 
 ---
 
