@@ -1,0 +1,14 @@
+{
+  "name": "esp32-ws-ota-server",
+  "version": "0.1.0",
+  "description": "A Node.js WebSocket and static file server to update ESP32 devices over WiFi, send commands (color, intensity, reset), and manage OTA firmware/files.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "ws": "^8.18.2"
+  }
+}
