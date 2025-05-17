@@ -10,8 +10,8 @@ import gc
 
 # ====== Configuration ======
 WIFI_NETWORKS = [
-    ('ot', '23456789'),
-    ('InformaticaAlumnes', 'info@2020'),
+    ('test', 'test'),
+    ('test', 'test'),
 ]
 SERVER_URL = 'http://192.168.137.1:3000'
 MAX_RETRIES = 10

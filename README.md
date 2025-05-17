@@ -1,7 +1,3 @@
-Here's a high-quality `README.md` tailored specifically for your GitHub repository, clearly documenting its purpose, installation instructions, and usage guidelines:
-
----
-
 # ESP32 WebSocket OTA Server and Client
 
 A lightweight and efficient server-client framework designed to manage ESP32 devices through WebSockets and OTA (Over-the-Air) updates. It includes a Node.js server for managing commands, firmware updates, and ESP32 device interaction via WiFi, and MicroPython client scripts that run directly on ESP32 devices to execute received commands and update firmware automatically.
@@ -151,5 +147,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 Contributions are welcome! Feel free to open issues and submit pull requests.
 
 ---
-
-**Happy coding! 🚀**
