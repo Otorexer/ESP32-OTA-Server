@@ -9,7 +9,6 @@ import gc
 import ujson
 
 # ====== Configuration ======
-
 def load_wifi_networks():
     try:
         with open("wifi.json") as f:
@@ -18,9 +17,7 @@ def load_wifi_networks():
     except Exception as e:
         print("[BOOT] Error loading wifi.json:", e)
         return []
-
 WIFI_NETWORKS = load_wifi_networks()
-
 SERVER_URL = 'http://192.168.137.1:3000'
 MAX_RETRIES = 10
 PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}  # add wifi.json so it isn't deleted
@@ -41,23 +38,58 @@ def list_files(title: str = "Current files") -> None:
     log("-------------------")
 
 def connect_wifi() -> tuple:
-    """Connect to WiFi network. Returns IP info or resets if unable to connect."""
+    """Connect to one of the available WiFi networks. Only reboot if ALL fail."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if wlan.isconnected():
         log('Already connected.')
         return wlan.ifconfig()
+
+    # Scan for available networks
+    try:
+        scan_list = wlan.scan()
+        found_ssids = set(x[0].decode() if isinstance(x[0], bytes) else x[0] for x in scan_list)
+        log(f"Visible networks: {', '.join(found_ssids) or '(none)'}")
+    except Exception as e:
+        log(f"Scan failed: {e}")
+        found_ssids = set()
+
+    tried = 0
     for ssid, pwd in WIFI_NETWORKS:
-        log(f'Trying SSID: {ssid}')
+        if ssid not in found_ssids:
+            log(f"SSID '{ssid}' not found in scan, skipping.")
+            continue
+        log(f"Trying SSID: {ssid}")
         wlan.connect(ssid, pwd)
         for attempt in range(1, MAX_RETRIES + 1):
             if wlan.isconnected():
                 break
-            log(f'  Connecting... attempt {attempt}/{MAX_RETRIES}')
+            log(f"  Connecting... attempt {attempt}/{MAX_RETRIES}")
             time.sleep(1)
         if wlan.isconnected():
             log(f'Connected to {ssid}')
             return wlan.ifconfig()
+        else:
+            log(f'Failed to connect to {ssid}')
+        tried += 1
+
+    if tried == 0:
+        log('No configured networks found in scan. Retrying with all configured SSIDs.')
+        # Fallback: Try all configured SSIDs anyway (if scan was empty/broken)
+        for ssid, pwd in WIFI_NETWORKS:
+            log(f"Trying fallback SSID: {ssid}")
+            wlan.connect(ssid, pwd)
+            for attempt in range(1, MAX_RETRIES + 1):
+                if wlan.isconnected():
+                    break
+                log(f"  Connecting... attempt {attempt}/{MAX_RETRIES}")
+                time.sleep(1)
+            if wlan.isconnected():
+                log(f'Connected to {ssid}')
+                return wlan.ifconfig()
+            else:
+                log(f'Failed to connect to {ssid} (fallback)')
+
     log('Could not connect to any network. Restarting...')
     time.sleep(2)
     machine.reset()
