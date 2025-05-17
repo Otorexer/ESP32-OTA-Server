@@ -23,7 +23,7 @@ WIFI_NETWORKS = load_wifi_networks()
 
 SERVER_URL = 'http://192.168.137.1:3000'
 MAX_RETRIES = 10
-PERSISTENT_FILES = {'boot.py', 'main.py', 'wifi.json'}  # add wifi.json so it isn't deleted
+PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}  # add wifi.json so it isn't deleted
 
 # ====== Logging ======
 def log(msg: str) -> None:
@@ -157,6 +157,7 @@ def main() -> None:
         download_files()
         update_boot_script()
         log('Done. Continuing...')
+        print("Hola")
     except Exception as e:
         log(f"Unexpected error: {e}")
         time.sleep(2)
