@@ -1,5 +1,4 @@
 # public/boot.py
-
 import network
 import time
 import machine
@@ -7,15 +6,24 @@ import sys
 import urequests as requests
 import os
 import gc
+import ujson
 
 # ====== Configuration ======
-WIFI_NETWORKS = [
-    ('test', 'test'),
-    ('test', 'test'),
-]
+
+def load_wifi_networks():
+    try:
+        with open("wifi.json") as f:
+            data = ujson.load(f)
+        return data.get("networks", [])
+    except Exception as e:
+        print("[BOOT] Error loading wifi.json:", e)
+        return []
+
+WIFI_NETWORKS = load_wifi_networks()
+
 SERVER_URL = 'http://192.168.137.1:3000'
 MAX_RETRIES = 10
-PERSISTENT_FILES = {'boot.py', 'main.py'}
+PERSISTENT_FILES = {'boot.py', 'main.py', 'wifi.json'}  # add wifi.json so it isn't deleted
 
 # ====== Logging ======
 def log(msg: str) -> None:
@@ -143,7 +151,6 @@ def main() -> None:
             log(f'ESP32 uname: {uname}')
         except Exception as e:
             log(f'ESP32 uname: Error {e}')
-
         ip = connect_wifi()
         log(f'Got IP: {ip}')
         clean_files()
