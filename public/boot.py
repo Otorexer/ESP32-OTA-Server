@@ -1,4 +1,3 @@
-# public/boot.py
 import network
 import time
 import machine
@@ -9,6 +8,8 @@ import gc
 import ujson
 
 # ====== Configuration ======
+
+# Load static WiFi networks from file
 def load_wifi_networks():
     try:
         with open("wifi.json") as f:
@@ -17,10 +18,11 @@ def load_wifi_networks():
     except Exception as e:
         print("[BOOT] Error loading wifi.json:", e)
         return []
+
 WIFI_NETWORKS = load_wifi_networks()
 SERVER_URL = 'http://192.168.137.1:3000'
 MAX_RETRIES = 10
-PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}  # add wifi.json so it isn't deleted
+PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}  # files to retain
 
 # ====== Logging ======
 def log(msg: str) -> None:
@@ -38,13 +40,12 @@ def list_files(title: str = "Current files") -> None:
     log("-------------------")
 
 def connect_wifi() -> tuple:
-    """Connect to one of the available WiFi networks. Reboot immediately if none found."""
+    # Connect to WiFi or reboot if unavailable
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if wlan.isconnected():
         log('Already connected.')
         return wlan.ifconfig()
-    # Scan for available networks
     try:
         scan_list = wlan.scan()
         found_ssids = set(x[0].decode() if isinstance(x[0], bytes) else x[0] for x in scan_list)
@@ -52,13 +53,11 @@ def connect_wifi() -> tuple:
     except Exception as e:
         log(f"Scan failed: {e}")
         found_ssids = set()
-    # Check if any of the configured SSIDs are found
     matched = [(ssid, pwd) for ssid, pwd in WIFI_NETWORKS if ssid in found_ssids]
     if not matched:
         log('No configured SSIDs found in scan. Rebooting immediately...')
         time.sleep(2)
         machine.reset()
-    # Try to connect to each found configured SSID
     for ssid, pwd in matched:
         log(f"Trying SSID: {ssid}")
         wlan.connect(ssid, pwd)
@@ -77,7 +76,6 @@ def connect_wifi() -> tuple:
     machine.reset()
 
 def clean_files() -> None:
-    """Delete all files except those in PERSISTENT_FILES."""
     list_files("Before cleaning")
     for f in os.listdir():
         if f not in PERSISTENT_FILES:
@@ -90,7 +88,6 @@ def clean_files() -> None:
     list_files("After cleaning")
 
 def files_identical(f1: str, f2: str) -> bool:
-    """Compare contents of two files in 1KB blocks."""
     try:
         with open(f1, 'rb') as a, open(f2, 'rb') as b:
             while True:
@@ -105,7 +102,6 @@ def files_identical(f1: str, f2: str) -> bool:
         return False
 
 def update_boot_script() -> None:
-    """Replace boot.py if boot_new.py differs."""
     if 'boot_new.py' not in os.listdir():
         return
     log('boot_new.py found, comparing...')
@@ -121,7 +117,6 @@ def update_boot_script() -> None:
         machine.reset()
 
 def download_files() -> None:
-    """Download all files listed on the remote server."""
     try:
         log('Getting list of files...')
         response = requests.get(f"{SERVER_URL}/files")

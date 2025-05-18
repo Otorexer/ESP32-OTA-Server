@@ -6,7 +6,8 @@ from ws import AsyncWebsocketClient
 import urequests as requests
 
 # ====== Configuration ======
-WS_URL = "ws://192.168.137.1:3000/"
+WS_URL = "ws://192.168.137.1:3000/"  # WebSocket server URL
+PING_URL = "http://192.168.137.1:3000/ping"  # HTTP health check endpoint
 PIN_INTERNAL = 48          # GPIO pin for the internal NeoPixel
 NUM_INTERNAL = 1           # Only one internal NeoPixel
 
@@ -37,7 +38,7 @@ async def ping_server_forever():
     fail_count = 0
     while True:
         try:
-            resp = requests.get("http://192.168.137.1:3000/ping")
+            resp = requests.get(PING_URL)
             data = resp.text
             resp.close()
             if data.strip() == "pong":
@@ -90,4 +91,5 @@ def main():
     loop.create_task(ping_server_forever())
     loop.run_forever()
 
-main()
+if __name__ == '__main__':
+    main()
