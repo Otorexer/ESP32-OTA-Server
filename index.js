@@ -59,5 +59,5 @@ require('./endpoints/control')(app, wss);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
-  console.log(`🌐 ESP32 OTA endpoint: http://<your-ip>:${PORT}/esp32/files`);
+  console.log(`🌐 ESP32 OTA endpoint: http://0.0.0.0:${PORT}/esp32/files`);
 });

@@ -3,16 +3,20 @@ body {
   text-align: center;
   margin: 2rem;
 }
-input[type="color"], input[type="range"] {
-  margin: 1rem auto;
-  display: block;
+button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  border: none;
+  background: #007aff;
+  color: #fff;
+  cursor: pointer;
 }
-label {
-  display: block;
-  margin-top: 1rem;
-  font-weight: bold;
+button:hover {
+  background: #005bb5;
 }
 #status {
   margin-top: 2rem;
   color: #555;
+  font-size: 1rem;
 }

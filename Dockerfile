@@ -1,23 +1,24 @@
-# Use an official Node.js runtime as a parent image
-FROM node:22
+# Use smallest official Node.js image
+FROM node:22-alpine
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json (if exists)
+# Only copy package files first, for efficient caching
 COPY package.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install only production dependencies
+RUN npm install --production && npm cache clean --force
 
-# Copy the rest of the application code (but NOT frontend or public)
-COPY . .
+# Copy only server files (exclude frontend, public, .git, .repomix, etc.)
+COPY index.js ./
+COPY endpoints ./endpoints
 
-# Remove frontend and public from the image (we will mount as volumes)
-RUN rm -rf frontend public
+# Remove any build-time only files if needed
+# (But above pattern already excludes them)
 
-# Expose the server port
+# Expose port
 EXPOSE 3000
 
-# Run the server
-CMD [ "npm", "start" ]
+# Start server
+CMD ["npm", "start"]

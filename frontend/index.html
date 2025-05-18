@@ -3,18 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ESP32 LED Controller</title>
+    <title>ESP32 Reset Control</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>ESP32 LED Controller</h1>
-    <label for="colorPicker">Color:</label>
-    <input type="color" id="colorPicker" />
-    <label for="intensitySlider"
-      >Intensity: <span id="intensityValue">100</span>%</label
-    >
-    <input type="range" id="intensitySlider" min="0" max="100" />
-    <p id="status">Connecting...</p>
+    <h1>ESP32 Reset Control</h1>
+    <button id="resetBtn">Reset All ESP32 Devices</button>
+    <p id="status"></p>
     <script src="frontend.js"></script>
   </body>
 </html>
