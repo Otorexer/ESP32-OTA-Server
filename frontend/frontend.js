@@ -19,22 +19,18 @@ function hexToRgb(hex) {
     bigint & 255
   ].join(',');
 }
-
 function rgbToHex(rgb) {
   const parts = rgb.split(',').map(Number);
   return '#' + parts.map(x => x.toString(16).padStart(2, '0')).join('');
 }
-
 function connectWebSocket() {
   socket = new WebSocket(`ws://${location.host}`);
   initialized = false;
-
   socket.addEventListener('open', () => {
     statusEl.textContent = 'Connected to WebSocket';
     lastSentColor = '';
     lastSentIntensity = '';
   });
-
   socket.addEventListener('message', (event) => {
     try {
       const data = JSON.parse(event.data);
@@ -55,17 +51,14 @@ function connectWebSocket() {
       // ignore
     }
   });
-
   socket.addEventListener('close', () => {
     statusEl.textContent = 'Disconnected. Reconnecting...';
     setTimeout(connectWebSocket, 3000);
   });
-
   socket.addEventListener('error', (err) => {
     console.error('WebSocket error:', err);
   });
 }
-
 colorPicker.addEventListener('input', (e) => {
   currentColor = e.target.value;
 });

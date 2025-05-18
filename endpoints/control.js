@@ -1,5 +1,3 @@
-// endpoints/control.js
-
 module.exports = function setupControlEndpoints(app, wss) {
   // Reset all ESP32 clients
   app.post('/reset-all', (req, res) => {

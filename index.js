@@ -1,21 +1,61 @@
-const express = require('express');
+// =======================
+// 1. Imports and Setup
+// =======================
+
+// Core/standard libraries
 const path = require('path');
 const http = require('http');
 
-const app = express();
+// Third-party libraries
+const express = require('express');
+
+// =======================
+// 2. Configuration
+// =======================
+
 const PORT = 3000;
 const publicDir = path.join(__dirname, 'public');
 const frontendPath = path.join(__dirname, 'frontend');
 
+// =======================
+// 3. Initialize Express
+// =======================
+
+const app = express();
+
+// =======================
+// 4. Mount Static and API Endpoints
+// =======================
+
+// Frontend static files and root index.html
 require('./endpoints/frontend')(app, frontendPath);
+
+// ESP32 OTA endpoints
 require('./endpoints/esp32')(app, publicDir);
+
+// Simple health check endpoint
 require('./endpoints/ping')(app);
 
+// =======================
+// 5. HTTP & WebSocket Setup
+// =======================
+
+// Create HTTP server
 const server = http.createServer(app);
+
+// WebSocket server (shared with HTTP)
 const { wss } = require('./endpoints/websocket')(server);
 
-// Control endpoints now modular:
+// =======================
+// 6. Custom Control Endpoints
+// =======================
+
+// Modular endpoints for ESP32 control commands
 require('./endpoints/control')(app, wss);
+
+// =======================
+// 7. Start Server
+// =======================
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
