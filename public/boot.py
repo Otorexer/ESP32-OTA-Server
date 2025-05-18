@@ -38,13 +38,12 @@ def list_files(title: str = "Current files") -> None:
     log("-------------------")
 
 def connect_wifi() -> tuple:
-    """Connect to one of the available WiFi networks. Only reboot if ALL fail."""
+    """Connect to one of the available WiFi networks. Reboot immediately if none found."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if wlan.isconnected():
         log('Already connected.')
         return wlan.ifconfig()
-
     # Scan for available networks
     try:
         scan_list = wlan.scan()
@@ -53,12 +52,14 @@ def connect_wifi() -> tuple:
     except Exception as e:
         log(f"Scan failed: {e}")
         found_ssids = set()
-
-    tried = 0
-    for ssid, pwd in WIFI_NETWORKS:
-        if ssid not in found_ssids:
-            log(f"SSID '{ssid}' not found in scan, skipping.")
-            continue
+    # Check if any of the configured SSIDs are found
+    matched = [(ssid, pwd) for ssid, pwd in WIFI_NETWORKS if ssid in found_ssids]
+    if not matched:
+        log('No configured SSIDs found in scan. Rebooting immediately...')
+        time.sleep(2)
+        machine.reset()
+    # Try to connect to each found configured SSID
+    for ssid, pwd in matched:
         log(f"Trying SSID: {ssid}")
         wlan.connect(ssid, pwd)
         for attempt in range(1, MAX_RETRIES + 1):
@@ -71,26 +72,7 @@ def connect_wifi() -> tuple:
             return wlan.ifconfig()
         else:
             log(f'Failed to connect to {ssid}')
-        tried += 1
-
-    if tried == 0:
-        log('No configured networks found in scan. Retrying with all configured SSIDs.')
-        # Fallback: Try all configured SSIDs anyway (if scan was empty/broken)
-        for ssid, pwd in WIFI_NETWORKS:
-            log(f"Trying fallback SSID: {ssid}")
-            wlan.connect(ssid, pwd)
-            for attempt in range(1, MAX_RETRIES + 1):
-                if wlan.isconnected():
-                    break
-                log(f"  Connecting... attempt {attempt}/{MAX_RETRIES}")
-                time.sleep(1)
-            if wlan.isconnected():
-                log(f'Connected to {ssid}')
-                return wlan.ifconfig()
-            else:
-                log(f'Failed to connect to {ssid} (fallback)')
-
-    log('Could not connect to any network. Restarting...')
+    log('Could not connect to any found network. Restarting...')
     time.sleep(2)
     machine.reset()
 

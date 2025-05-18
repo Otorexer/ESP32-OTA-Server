@@ -3,6 +3,7 @@ import machine
 import neopixel
 import ujson
 from ws import AsyncWebsocketClient
+import urequests as requests
 
 # ====== Configuration ======
 WS_URL = "ws://192.168.137.1:3000/"
@@ -30,6 +31,29 @@ def set_color(color_val, intensity_val=None):
         except Exception as e:
             print("[LED] Error decoding RGB:", e)
     print("[LED] Invalid color format (expected 'R,G,B'):", color_val)
+
+# ====== Ping Server Health Task ======
+async def ping_server_forever():
+    fail_count = 0
+    while True:
+        try:
+            resp = requests.get("http://192.168.137.1:3000/ping")
+            data = resp.text
+            resp.close()
+            if data.strip() == "pong":
+                print("[PING] pong received.")
+                fail_count = 0
+            else:
+                print("[PING] Bad response:", data)
+                fail_count += 1
+        except Exception as e:
+            print("[PING] Ping failed:", e)
+            fail_count += 1
+        if fail_count >= 3:
+            print("[PING] Failed 3 times. Rebooting...")
+            await asyncio.sleep(1)
+            machine.reset()
+        await asyncio.sleep(1)
 
 # ====== WebSocket Logic ======
 async def ws_client_forever():
@@ -63,6 +87,7 @@ async def ws_client_forever():
 def main():
     loop = asyncio.get_event_loop()
     loop.create_task(ws_client_forever())
+    loop.create_task(ping_server_forever())
     loop.run_forever()
 
 main()

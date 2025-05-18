@@ -75,6 +75,10 @@ app.post('/led/:rgb', (req, res) => {
   res.send(`Color ${rgb} (intensity ${intensity}%) sent to all clients.`);
 });
 
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
+
 // Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
