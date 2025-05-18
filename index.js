@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const WebSocket = require('ws');
-
 const app = express();
 const PORT = 3000;
 const publicDir = path.join(__dirname, 'public');
@@ -16,28 +15,45 @@ if (!fs.existsSync(publicDir)) {
   console.log('📂 "public" folder already exists.');
 }
 
-// Serve static files
-app.use(express.static(publicDir));
+// =============== ESP32 OTA API ===============
 
-// List available files
-app.get('/files', (req, res) => {
+// List files for ESP32 OTA
+app.get('/esp32/files', (req, res) => {
   fs.readdir(publicDir, (err, files) => {
     if (err) return res.status(500).json({ error: 'Cannot read directory.' });
     res.json(files);
   });
 });
 
-// Create HTTP and WebSocket server
+// Serve ESP32 OTA files (raw download)
+app.get('/esp32/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(publicDir, filename);
+  // Extra: avoid serving non-files
+  if (filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).send('Invalid filename.');
+  }
+  fs.access(filePath, fs.constants.R_OK, (err) => {
+    if (err) return res.status(404).send('File not found.');
+    res.sendFile(filePath);
+  });
+});
+
+// ========== WebSocket and Other API ==========
+
+// Serve static files for browser (if you want)
+// app.use(express.static(publicDir)); // <-- comment this if you want only ESP32 API!
+
+// WebSocket logic
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// When a client connects via WebSocket
 wss.on('connection', ws => {
   console.log('⚡ WS client connected');
   ws.on('close', () => console.log('🛑 WS client disconnected'));
 });
 
-// Route to reset all ESP32 clients
+// Reset all ESP32 clients
 app.post('/reset-all', (req, res) => {
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
@@ -48,10 +64,10 @@ app.post('/reset-all', (req, res) => {
   res.send('Reset command sent.');
 });
 
-// Route: /led/:rgb/:intensity
+// /led/:rgb/:intensity
 app.post('/led/:rgb/:intensity', (req, res) => {
-  const rgb = req.params.rgb; // '255,255,255'
-  const intensity = req.params.intensity; // '100' (string)
+  const rgb = req.params.rgb;
+  const intensity = req.params.intensity;
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({ color: rgb, intensity }));
@@ -61,9 +77,8 @@ app.post('/led/:rgb/:intensity', (req, res) => {
   res.send(`Color ${rgb} (intensity ${intensity}%) sent to all clients.`);
 });
 
-// Alternative route: only color (default intensity 100%)
+// /led/:rgb (default intensity 100%)
 app.post('/led/:rgb', (req, res) => {
-  // If route already included intensity, this one does NOT run. Express uses the most specific route.
   const rgb = req.params.rgb;
   const intensity = '100';
   wss.clients.forEach(client => {
@@ -79,7 +94,7 @@ app.get('/ping', (req, res) => {
   res.send('pong');
 });
 
-// Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🌐 ESP32 OTA endpoint: http://<your-ip>:${PORT}/esp32/files`);
 });

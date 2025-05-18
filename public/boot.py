@@ -8,8 +8,6 @@ import gc
 import ujson
 
 # ====== Configuration ======
-
-# Load static WiFi networks from file
 def load_wifi_networks():
     try:
         with open("wifi.json") as f:
@@ -20,15 +18,21 @@ def load_wifi_networks():
         return []
 
 WIFI_NETWORKS = load_wifi_networks()
-SERVER_URL = 'http://192.168.137.1:3000'
-MAX_RETRIES = 10
-PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}  # files to retain
 
-# ====== Logging ======
+# ---------- MODIFY HERE ----------
+# List your primary and fallback server URLs (without trailing /)
+SERVER_URLS = [
+    'http://192.168.137.1:3000/esp32',   # Primary
+    'http://192.168.137.1:3000',     # Fallback (example)
+]
+# ---------------------------------
+
+MAX_RETRIES = 10
+PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}
+
 def log(msg: str) -> None:
     print(f"[BOOT] {msg}")
 
-# ====== Utility Functions ======
 def list_files(title: str = "Current files") -> None:
     log(f"--- {title} ---")
     files = sorted(os.listdir())
@@ -40,7 +44,6 @@ def list_files(title: str = "Current files") -> None:
     log("-------------------")
 
 def connect_wifi() -> tuple:
-    # Connect to WiFi or reboot if unavailable
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if wlan.isconnected():
@@ -116,36 +119,45 @@ def update_boot_script() -> None:
         time.sleep(2)
         machine.reset()
 
+# ---- MODIFIED: download_files supports two servers ----
 def download_files() -> None:
-    try:
-        log('Getting list of files...')
-        response = requests.get(f"{SERVER_URL}/files")
-        file_list = response.json()
-        response.close()
-        if not file_list:
-            log('No files found on the server. Restarting...')
-            time.sleep(2)
-            machine.reset()
-        total_bytes = 0
-        for name in file_list:
-            log(f'Downloading {name}...')
-            resp = requests.get(f"{SERVER_URL}/{name}")
-            data = resp.content
-            size = len(data)
-            total_bytes += size
-            dest = 'boot_new.py' if name == 'boot.py' else name
-            with open(dest, 'wb') as f:
-                f.write(data)
-            resp.close()
-            log(f'{dest} saved ({size} bytes)')
-        log(f'Total downloaded: {total_bytes} bytes')
-        list_files("After download")
-    except Exception as e:
-        log(f"Error downloading files: {e}. Restarting...")
-        time.sleep(2)
-        machine.reset()
+    # Try each server in order
+    last_error = None
+    for server in SERVER_URLS:
+        try:
+            log(f'Getting list of files from {server}...')
+            response = requests.get(f"{server}/files")
+            file_list = response.json()
+            response.close()
+            if not file_list:
+                log('No files found on the server. Restarting...')
+                time.sleep(2)
+                machine.reset()
+            total_bytes = 0
+            for name in file_list:
+                log(f'Downloading {name}...')
+                resp = requests.get(f"{server}/{name}")
+                data = resp.content
+                size = len(data)
+                total_bytes += size
+                dest = 'boot_new.py' if name == 'boot.py' else name
+                with open(dest, 'wb') as f:
+                    f.write(data)
+                resp.close()
+                log(f'{dest} saved ({size} bytes)')
+            log(f'Total downloaded: {total_bytes} bytes')
+            list_files("After download")
+            return  # SUCCESS, exit function!
+        except Exception as e:
+            log(f"Error downloading from {server}: {e}")
+            last_error = e
+            # Try next server
+    # If both/all failed:
+    log(f"All server(s) failed. Restarting...")
+    time.sleep(2)
+    machine.reset()
+# ------------------------------------------------------
 
-# ====== Main Entrypoint ======
 def main() -> None:
     try:
         # Print chip info at startup
