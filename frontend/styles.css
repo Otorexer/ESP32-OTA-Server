@@ -1,0 +1,18 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin: 2rem;
+}
+input[type="color"], input[type="range"] {
+  margin: 1rem auto;
+  display: block;
+}
+label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+#status {
+  margin-top: 2rem;
+  color: #555;
+}

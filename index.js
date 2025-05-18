@@ -7,6 +7,15 @@ const app = express();
 const PORT = 3000;
 const publicDir = path.join(__dirname, 'public');
 
+const frontendPath = path.join(__dirname, 'frontend');
+app.use(express.static(frontendPath));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+
+
 // Create 'public' folder if it doesn't exist
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
@@ -48,8 +57,40 @@ app.get('/esp32/:filename', (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+let currentState = {
+  color: "255,0,0",
+  intensity: "100"
+};
+
 wss.on('connection', ws => {
   console.log('⚡ WS client connected');
+  // Immediately send current state to the newly connected client
+  ws.send(JSON.stringify(currentState));
+
+  ws.on('message', (message) => {
+    console.log('📨 WS received:', message.toString());
+    try {
+      const data = JSON.parse(message);
+      let updated = false;
+      if (data.color && typeof data.color === "string") {
+        currentState.color = data.color;
+        updated = true;
+      }
+      if (data.intensity && typeof data.intensity === "string") {
+        currentState.intensity = data.intensity;
+        updated = true;
+      }
+      // If state updated, broadcast to all clients (INCLUDING the sender!)
+      if (updated) {
+        wss.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(currentState));
+          }
+        });
+      }
+    } catch {}
+  });
+
   ws.on('close', () => console.log('🛑 WS client disconnected'));
 });
 
@@ -94,7 +135,7 @@ app.get('/ping', (req, res) => {
   res.send('pong');
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
   console.log(`🌐 ESP32 OTA endpoint: http://<your-ip>:${PORT}/esp32/files`);
 });
