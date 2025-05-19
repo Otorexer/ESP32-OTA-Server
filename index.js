@@ -14,8 +14,6 @@ const express = require('express');
 // =======================
 
 const PORT = 3000;
-const publicDir = path.join(__dirname, 'public');
-const frontendPath = path.join(__dirname, 'frontend');
 
 // =======================
 // 3. Initialize Express
@@ -28,10 +26,10 @@ const app = express();
 // =======================
 
 // Frontend static files and root index.html
-require('./endpoints/frontend')(app, frontendPath);
+require('./endpoints/frontend')(app);
 
 // ESP32 OTA endpoints
-require('./endpoints/esp32')(app, publicDir);
+require('./endpoints/esp32')(app);
 
 // Simple health check endpoint
 require('./endpoints/ping')(app);
