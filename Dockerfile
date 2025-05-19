@@ -7,6 +7,9 @@ WORKDIR /usr/src/app
 # Only copy package files first, for efficient caching
 COPY package.json ./
 
+# Set environment for production
+ENV NODE_ENV=production
+
 # Install only production dependencies
 RUN npm install --production && npm cache clean --force
 
