@@ -4,11 +4,12 @@ import ujson
 from ws import AsyncWebsocketClient
 import urequests as requests
 
-# ====== Configuration ======
-WS_URL = "ws://192.168.137.1:3000/"  # WebSocket server URL
-PING_URL = "http://192.168.137.1:3000/ping"  # HTTP health check endpoint
+WS_URL = "ws://192.168.137.1:3000/"
+PING_URL = "http://192.168.137.1:3000/ping"
 
-# ====== Ping Server Health Task ======
+def log(tag, msg):
+    print(f"{tag}:{msg}")
+
 async def ping_server_forever():
     fail_count = 0
     while True:
@@ -17,46 +18,45 @@ async def ping_server_forever():
             data = resp.text
             resp.close()
             if data.strip() == "pong":
-                print("[PING] pong received.")
+                log("PING", "OK")
                 fail_count = 0
             else:
-                print("[PING] Bad response:", data)
+                log("PING", f"BadResp:{data}")
                 fail_count += 1
         except Exception as e:
-            print("[PING] Ping failed:", e)
+            log("PING", f"Error:{e}")
             fail_count += 1
         if fail_count >= 3:
-            print("[PING] Failed 3 times. Rebooting...")
+            log("PING", "3 fail, rebooting")
             await asyncio.sleep(1)
             machine.reset()
         await asyncio.sleep(1)
 
-# ====== WebSocket Logic ======
 async def ws_client_forever():
     while True:
         try:
             ws = AsyncWebsocketClient()
             await ws.handshake(WS_URL)
-            print("[WS] Connected to server")
+            log("WS", "Connected")
             while True:
                 msg = await ws.recv()
                 if not msg:
-                    print("[WS] Disconnected, closing socket...")
+                    log("WS", "Disconnected, closing")
                     await ws.close()
                     break
                 try:
                     data = ujson.loads(msg)
                     if 'reset' in data and data['reset']:
-                        print("[WS] Reset requested, restarting...")
+                        log("WS", "Reset cmd, rebooting")
                         machine.reset()
+                    # Place for more commands
                 except Exception as e:
-                    print("Error processing message:", e)
+                    log("WS", f"Parse error:{e}")
         except Exception as e:
-            print("[WS] Connection or communication error:", e)
-        print("[WS] Retrying connection in 3 seconds...")
+            log("WS", f"Conn/comm error:{e}")
+        log("WS", "Retry in 3s")
         await asyncio.sleep(3)
 
-# ====== Main Entrypoint ======
 def main():
     loop = asyncio.get_event_loop()
     loop.create_task(ws_client_forever())
