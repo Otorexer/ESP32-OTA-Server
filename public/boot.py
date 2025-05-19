@@ -19,13 +19,10 @@ def load_wifi_networks():
 
 WIFI_NETWORKS = load_wifi_networks()
 
-# ---------- MODIFY HERE ----------
-# List your primary and fallback server URLs (without trailing /)
 SERVER_URLS = [
-    'http://192.168.137.1:3000/esp32',   # Primary
-    'http://192.168.137.1:3000',     # Fallback (example)
+    'http://192.168.137.1:3000/esp32',
+    'http://192.168.137.1:3000',
 ]
-# ---------------------------------
 
 MAX_RETRIES = 10
 PERSISTENT_FILES = {'boot.py', 'boot_new.py', 'wifi.json'}
